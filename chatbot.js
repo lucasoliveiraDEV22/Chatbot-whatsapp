@@ -10,8 +10,17 @@ const client = new Client({
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', (qr) => {
-  qrcode.generate(qr, { small: true });
-  console.log('Escaneie o QR Code acima para conectar.');
+  const qrcode = require('qrcode');
+  console.log('Escaneie o QR Code abaixo para conectar:');
+
+  // Gera uma versão reduzida do QR Code e exibe como texto
+  qrcode.toString(qr, { type: 'terminal', margin: 1 }, (err, output) => {
+    if (err) {
+      console.error('Erro ao gerar QR Code:', err);
+    } else {
+      console.log(output);
+    }
+  });
 });
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
