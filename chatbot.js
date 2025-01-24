@@ -23,7 +23,10 @@ const server = app.listen(PORT, () => {
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
       console.error(`A porta ${PORT} já está em uso. Por favor, tente uma porta diferente.`);
-      process.exit(1); // Sai do processo para evitar travamentos
+      const newPort = Number(PORT) + 1;
+      app.listen(newPort, () => {
+        console.log(`Servidor rodando em http://localhost:${newPort}`);
+      });
   } else {
       throw err;
   }
@@ -68,8 +71,15 @@ client.on('disconnected', (reason) => {
   qrCodeData = ''; // Reseta o QR Code
   // console.log('Reconecte manualmente se necessário.');
 });
+client.on('message', async (msg) => {
+  console.log(`[${new Date().toISOString()}] Mensagem recebida de ${msg.from}: ${msg.body}`);
+});
 // E inicializa tudo
-client.initialize();
+try {
+  client.initialize();
+} catch (error) {
+  console.error('Erro ao inicializar o cliente:', error.message);
+};
 
 // Rota para exibir o QR Code no navegador
 app.get('/', async (req, res) => {
@@ -80,15 +90,12 @@ app.get('/', async (req, res) => {
   }
   // Gera o QR Code como imagem base64
   const qrCodeImage = await qrcode.toDataURL(qrCodeData);
-  res.send(`
+  res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
         <img src="${qrCodeImage}" alt="QR Code" style="width: 300px; height: 300px;" />
       </div>
     `);
-});
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
