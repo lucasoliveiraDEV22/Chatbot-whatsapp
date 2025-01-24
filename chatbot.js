@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 3000;
 // Cria um servidor básico
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Chatbot para WhatsApp está rodando!');
+  res.end('Chatbot para WhatsApp esta rodando!');
 });
 
 // Faz o servidor escutar na porta especificada
