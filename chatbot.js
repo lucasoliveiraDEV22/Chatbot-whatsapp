@@ -1,33 +1,52 @@
 const http = require('http');
 // Define a porta a partir da variável de ambiente ou usa a porta 3000 como padrão
-const PORT = process.env.PORT || 3000;
-
-// Cria um servidor básico
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Chatbot para WhatsApp esta rodando!');
-});
-
-// Faz o servidor escutar na porta especificada
-server.listen(PORT, () => {
-  console.log(`Servidor HTTP rodando na porta ${PORT}`);
-});
-
-// leitor de qr code
 const express = require('express');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Mudança Buttons
+
+const app = express();
+const PORT = process.env.PORT || 3004;
+
+// Cria um servidor básico
+// const server = http.createServer((req, res) => {
+//   res.writeHead(200, { 'Content-Type': 'text/plain' });
+//   res.end('Chatbot para WhatsApp esta rodando!');
+// });
+
+// Faz o servidor escutar na porta especificada
+// Inicializando o servidor
+const server = app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+});
+
+// Tratamento de erros relacionados à porta
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+      console.error(`A porta ${PORT} já está em uso. Por favor, tente uma porta diferente.`);
+      process.exit(1); // Sai do processo para evitar travamentos
+  } else {
+      throw err;
+  }
+});
+
+// leitor de qr code
+
 const fs = require('fs');
 const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'chatbot-dra-jessica' }) // Sessão será salva automaticamente e identificador unico da sessão
+  authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }) // Sessão será salva automaticamente e identificador unico da sessão
 });
+// Variável para armazenar o QR Code
+let qrCodeData = '';
 
 // Variável para rastrear a disponibilidade de um atendente
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', (qr) => {
-  const qrcode = require('qrcode');
-  console.log('Escaneie o QR Code abaixo para conectar:');
+  // const qrcode = require('qrcode');
+  // console.log('Escaneie o QR Code abaixo para conectar:');
+  // Gera o QR Code e armazena os dados
+  qrCodeData = qr;
+  console.log('QR Code gerado! Acesse a interface web para escanear.');
 
   // Gera uma versão reduzida do QR Code e exibe como texto
   qrcode.toString(qr, { type: 'terminal', margin: 1 }, (err, output) => {
@@ -40,16 +59,37 @@ client.on('qr', (qr) => {
 });
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
-  console.log('Tudo certo! WhatsApp conectado.');
+  console.log('WhatsApp conectado com sucesso!');
 });
 
 // Evento disparado quando o cliente perde a conexão
 client.on('disconnected', (reason) => {
   console.log('WhatsApp desconectado:', reason);
-  console.log('Reconecte manualmente se necessário.');
+  qrCodeData = ''; // Reseta o QR Code
+  // console.log('Reconecte manualmente se necessário.');
 });
 // E inicializa tudo
 client.initialize();
+
+// Rota para exibir o QR Code no navegador
+app.get('/', async (req, res) => {
+  if (!qrCodeData) {
+    return res.send(
+      '<h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
+    );
+  }
+  // Gera o QR Code como imagem base64
+  const qrCodeImage = await qrcode.toDataURL(qrCodeData);
+  res.send(`
+      <div style="text-align: center; margin-top: 50px;">
+        <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
+        <img src="${qrCodeImage}" alt="QR Code" style="width: 300px; height: 300px;" />
+      </div>
+    `);
+});
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
 
@@ -147,3 +187,4 @@ client.on('message', async (msg) => {
     }
   }
 });
+// Inicia o servidor
