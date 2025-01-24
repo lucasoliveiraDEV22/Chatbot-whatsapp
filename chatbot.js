@@ -14,6 +14,7 @@ server.listen(PORT, () => {
 });
 
 // leitor de qr code
+const express = require('express');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Mudança Buttons
 const fs = require('fs');
