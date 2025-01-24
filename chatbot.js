@@ -1,3 +1,18 @@
+const http = require('http');
+// Define a porta a partir da variável de ambiente ou usa a porta 3000 como padrão
+const PORT = process.env.PORT || 3000;
+
+// Cria um servidor básico
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Chatbot para WhatsApp está rodando!');
+});
+
+// Faz o servidor escutar na porta especificada
+server.listen(PORT, () => {
+  console.log(`Servidor HTTP rodando na porta ${PORT}`);
+});
+
 // leitor de qr code
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Mudança Buttons
