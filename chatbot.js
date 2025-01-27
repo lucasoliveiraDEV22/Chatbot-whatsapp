@@ -1,4 +1,4 @@
-const http = require('http');
+// const http = require('http');
 // Define a porta a partir da variável de ambiente ou usa a porta 3000 como padrão
 const express = require('express');
 const qrcode = require('qrcode');
@@ -25,10 +25,11 @@ server.on('error', (err) => {
     console.error(
       `A porta ${PORT} já está em uso. Por favor, tente uma porta diferente.`
     );
-    const newPort = Number(PORT) + 1;
-    app.listen(newPort, () => {
-      console.log(`Servidor rodando em http://localhost:${newPort}`);
-    });
+    process.exit(1);
+    // const newPort = Number(PORT) + 1;
+    // app.listen(newPort, () => {
+    //   console.log(`Servidor rodando em http://localhost:${newPort}`);
+    // });
   } else {
     throw err;
   }
@@ -36,9 +37,20 @@ server.on('error', (err) => {
 
 // leitor de qr code
 
-const fs = require('fs');
+// const fs = require('fs');
 const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }) // Sessão será salva automaticamente e identificador unico da sessão
+  authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }),
+  puppeteer: {
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
+  } // Sessão será salva automaticamente e identificador unico da sessão
 });
 // Variável para armazenar o QR Code
 let qrCodeData = '';
@@ -51,14 +63,16 @@ client.on('qr', (qr) => {
   // console.log('Escaneie o QR Code abaixo para conectar:');
   // Gera o QR Code e armazena os dados
   qrCodeData = qr;
-  const qrCodeLink = `http://localhost:${PORT}/qrcode`;
-  console.log(`Acesse o QR Code em: ${qrCodeLink}`);
+  // const qrCodeLink = `http://localhost:${PORT}/qrcode`;
+  // console.log(`Acesse o QR Code em: ${qrCodeLink}`);
+  console.log('Novo QR Code gerado');
 
   // Removido o código que exibia o QR Code no terminal
 });
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
   console.log('WhatsApp conectado com sucesso!');
+  qrCodeData = ''; // Limpa o QR Code quando conectado
 });
 
 // Evento disparado quando o cliente perde a conexão
@@ -66,6 +80,9 @@ client.on('disconnected', (reason) => {
   console.log('WhatsApp desconectado:', reason);
   qrCodeData = ''; // Reseta o QR Code
   // console.log('Reconecte manualmente se necessário.');
+  setTimeout(() => {
+    client.initialize();
+  }, 5000);
 });
 client.on('message', async (msg) => {
   console.log(
@@ -83,35 +100,44 @@ try {
 // Rota para exibir o link do QR Code
 app.get('/', (req, res) => {
   if (!qrCodeData) {
-    return res
-      .status(200)
-      .send(
-        '<h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
-      );
+    return res.status(200).send(
+      `
+         <div style="text-align: center; margin-top: 50px;">
+        <h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
+        <p>Se o QR Code não aparecer em alguns segundos, <a href="/start">clique aqui</a> para reiniciar.</p>
+        <script>
+        setTimeout(() => { window.location.reload(); }, 5000);
+      </script>
+      </div>
+      `
+    );
   }
-  const qrLink = `http://localhost:${PORT}/qrcode`; // Link para leitura do QR Code
-  return res.status(200).send(`
-    <div style="text-align: center; margin-top: 50px;">
-      <h1>Clique no link abaixo para acessar o QR Code:</h1>
-      <a href="${qrLink}" target="_blank">${qrLink}</a>
-    </div>
-  `);
+  // const qrLink = `http://localhost:${PORT}/qrcode`; // Link para leitura do QR Code
+  // return res.status(200).send(`
+  //   <div style="text-align: center; margin-top: 50px;">
+  //     <h1>Clique no link abaixo para acessar o QR Code:</h1>
+  //     <a href="${qrLink}" target="_blank">${qrLink}</a>
+  //   </div>
+  // `);
+  return res.redirect('/qrcode');
 });
 
 // Adicionando uma nova rota para inicializar o QR Code
 app.get('/start', (req, res) => {
   client.initialize(); // Inicializa o cliente e gera o QR Code
-  res.status(200).send('<h1>O QR Code está sendo gerado. Acesse a rota / para ver o link.</h1>');
+  // res.status(200).send('<h1>O QR Code está sendo gerado. Acesse a rota / para ver o link.</h1>');
+  return res.redirect('/');
 });
 
 // Rota para exibir o QR Code no navegador
 app.get('/qrcode', async (req, res) => {
   if (!qrCodeData) {
-    return res
-      .status(200)
-      .send(
-        '<h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
-      );
+    // return res
+    //   .status(200)
+    //   .send(
+    //     '<h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
+    //   );
+    return res.redirect('/');
   }
   // Gera o QR Code como imagem base64
   try {
@@ -119,7 +145,11 @@ app.get('/qrcode', async (req, res) => {
     res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
-<img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
+        <img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
+        <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
+        <script>
+          setTimeout(() => { window.location.reload(); }, 30000);
+        </script>
       </div>
     `);
   } catch (error) {
@@ -129,7 +159,6 @@ app.get('/qrcode', async (req, res) => {
       .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
   }
 });
-
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
 
