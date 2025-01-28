@@ -58,7 +58,7 @@ let qrCodeData = '';
 // Variável para rastrear a disponibilidade de um atendente
 let attendantAvailable = false;
 // serviço de leitura do qr code
-client.on('qr', (qr) => {
+client.on('qr', async (qr) => {
   // const qrcode = require('qrcode');
   // console.log('Escaneie o QR Code abaixo para conectar:');
   // Gera o QR Code e armazena os dados
@@ -124,12 +124,12 @@ app.get('/', (req, res) => {
 
 // Adicionando uma nova rota para inicializar o QR Code
 app.get('/start', (req, res) => {
-client.initialize(); // Inicializa o cliente e gera o QR Code
-setTimeout(() => {
-  client.on('qr', (qr) => {
-    qrCodeData = qr; // Gera o QR Code e armazena os dados
-  });
-}, 1000); // Inicia a geração do QR Code após 1 segundo
+  client.initialize(); // Inicializa o cliente e gera o QR Code
+  setTimeout(() => {
+    client.on('qr', (qr) => {
+      qrCodeData = qr; // Gera o QR Code e armazena os dados
+    });
+  }, 1000); // Inicia a geração do QR Code após 1 segundo
   // res.status(200).send('<h1>O QR Code está sendo gerado. Acesse a rota / para ver o link.</h1>');
   return res.redirect('/');
 });
@@ -147,7 +147,8 @@ app.get('/qrcode', async (req, res) => {
   // Gera o QR Code como imagem base64
   try {
     const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
-    res.status(200).send(`
+    app.get('/qrcode', (req, res) => {
+      res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
         <img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
@@ -157,6 +158,7 @@ app.get('/qrcode', async (req, res) => {
         </script>
       </div>
     `);
+    });
   } catch (error) {
     console.error('Erro ao gerar QR Code:', error);
     res
