@@ -141,7 +141,7 @@ app.get('/qrcode', async (req, res) => {
   }
   // Gera o QR Code como imagem base64
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
     res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
