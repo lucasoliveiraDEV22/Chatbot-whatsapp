@@ -63,15 +63,15 @@ let qrCodeData = '';
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
-  // const qrcode = require('qrcode');
-  // console.log('Escaneie o QR Code abaixo para conectar:');
-  // Gera o QR Code e armazena os dados
-  qrCodeData = qr;
-  // const qrCodeLink = `http://localhost:${PORT}/qrcode`;
-  // console.log(`Acesse o QR Code em: ${qrCodeLink}`);
-  console.log('Novo QR Code gerado');
-
-  // Removido o código que exibia o QR Code no terminal
+  qrCodeData = qr; // Gera o QR Code e armazena os dados
+  console.log('Novo QR Code gerado:', qr); // Log do QR Code gerado
+  // Gera o QR Code como imagem base64
+  try {
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
+    console.log('QR Code gerado com sucesso'); // Log de sucesso na geração do QR Code
+  } catch (error) {
+    console.error('Erro ao gerar QR Code:', error); // Log de erro na geração do QR Code
+  }
 });
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
