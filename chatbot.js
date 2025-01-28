@@ -124,7 +124,12 @@ app.get('/', (req, res) => {
 
 // Adicionando uma nova rota para inicializar o QR Code
 app.get('/start', (req, res) => {
-  client.initialize(); // Inicializa o cliente e gera o QR Code
+client.initialize(); // Inicializa o cliente e gera o QR Code
+setTimeout(() => {
+  client.on('qr', (qr) => {
+    qrCodeData = qr; // Gera o QR Code e armazena os dados
+  });
+}, 1000); // Inicia a geração do QR Code após 1 segundo
   // res.status(200).send('<h1>O QR Code está sendo gerado. Acesse a rota / para ver o link.</h1>');
   return res.redirect('/');
 });
