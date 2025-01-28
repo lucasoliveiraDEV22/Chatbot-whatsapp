@@ -17,6 +17,10 @@ const PORT = process.env.PORT || 3004;
 // Inicializando o servidor
 const server = app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(
+    `Acesse http://localhost:${PORT} para verificar o funcionamento.`
+  );
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
 
 // Tratamento de erros relacionados à porta
@@ -99,6 +103,8 @@ try {
 }
 // Rota para exibir o link do QR Code
 app.get('/', (req, res) => {
+  console.log('Rota principal acessada');
+  console.log('Estado do QR Code:', qrCodeData); // Log do estado do QR Code
   if (!qrCodeData) {
     return res.status(200).send(
       `
@@ -119,36 +125,32 @@ app.get('/', (req, res) => {
   //     <a href="${qrLink}" target="_blank">${qrLink}</a>
   //   </div>
   // `);
+  console.log('Redirecionando para /qrcode'); // Log de redirecionamento
   return res.redirect('/qrcode');
 });
 
-// Adicionando uma nova rota para inicializar o QR Code
 app.get('/start', (req, res) => {
   client.initialize(); // Inicializa o cliente e gera o QR Code
-  setTimeout(() => {
-    client.on('qr', (qr) => {
-      qrCodeData = qr; // Gera o QR Code e armazena os dados
-    });
-  }, 1000); // Inicia a geração do QR Code após 1 segundo
-  // res.status(200).send('<h1>O QR Code está sendo gerado. Acesse a rota / para ver o link.</h1>');
-  return res.redirect('/');
+  client.on('qr', (qr) => {
+    qrCodeData = qr; // Gera o QR Code e armazena os dados
+    console.log('QR Code gerado imediatamente'); // Log para indicar que o QR Code foi gerado
+  });
+  return res.redirect('/'); // Redireciona imediatamente
 });
 
-// Rota para exibir o QR Code no navegador
+// Adicionando uma nova rota para inicializar o QR Code
 app.get('/qrcode', async (req, res) => {
+  console.log('Rota /qrcode acessada'); // Log de acesso à rota
   if (!qrCodeData) {
-    // return res
-    //   .status(200)
-    //   .send(
-    //     '<h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
-    //   );
+    console.log('QR Code não disponível, redirecionando para /'); // Log se QR Code não estiver disponível
     return res.redirect('/');
   }
   // Gera o QR Code como imagem base64
   try {
     const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
-    app.get('/qrcode', (req, res) => {
-      res.status(200).send(`
+    console.log('QR Code gerado com sucesso'); // Log de sucesso na geração do QR Code
+    console.log('QR Code Image:', qrCodeImage); // Log do QR Code gerado
+    res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
         <img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
@@ -158,7 +160,6 @@ app.get('/qrcode', async (req, res) => {
         </script>
       </div>
     `);
-    });
   } catch (error) {
     console.error('Erro ao gerar QR Code:', error);
     res
