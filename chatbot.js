@@ -52,7 +52,9 @@ const client = new Client({
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu'
+      '--disable-gpu',  
+      '--disable-features=site-per-process',
+      '--single-process'
     ]
   } // Sessão será salva automaticamente e identificador unico da sessão
 });
@@ -87,6 +89,12 @@ client.on('disconnected', (reason) => {
   setTimeout(() => {
     client.initialize();
   }, 5000);
+});
+client.on('authenticated', () => {
+  console.log('✅ Cliente autenticado com sucesso!');
+});
+client.on('auth_failure', msg => {
+  console.error('❌ Falha na autenticação:', msg);
 });
 client.on('message', async (msg) => {
   console.log(
