@@ -45,6 +45,7 @@ server.on('error', (err) => {
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }),
   puppeteer: {
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -65,14 +66,15 @@ let qrCodeData = '';
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
-  qrCodeData = qr; // Gera o QR Code e armazena os dados
-  console.log('Novo QR Code gerado:', qr); // Log do QR Code gerado
-  // Gera o QR Code como imagem base64
+  console.log('🔄 Novo QR Code gerado.');
+  qrCodeData = ''; // Limpa o QR Code antigo
+  qrCodeData = qr; // Atualiza para o novo QR Code válido
+
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
-    console.log('QR Code gerado com sucesso'); // Log de sucesso na geração do QR Code
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
+    console.log('✅ QR Code atualizado!');
   } catch (error) {
-    console.error('Erro ao gerar QR Code:', error); // Log de erro na geração do QR Code
+    console.error('❌ Erro ao gerar QR Code:', error);
   }
 });
 // apos isso ele diz que foi tudo certo
@@ -82,13 +84,12 @@ client.on('ready', () => {
 });
 
 // Evento disparado quando o cliente perde a conexão
-client.on('disconnected', (reason) => {
-  console.log('WhatsApp desconectado:', reason);
-  qrCodeData = ''; // Reseta o QR Code
-  // console.log('Reconecte manualmente se necessário.');
+client.on('disconnected', async () => {
+  console.log('⚠️ Cliente desconectado! Tentando reconectar...');
+  qrCodeData = ''; // Limpa o QR Code antigo
   setTimeout(() => {
     client.initialize();
-  }, 5000);
+  }, 5000); // Aguarda 5 segundos antes de reiniciar
 });
 client.on('authenticated', () => {
   console.log('✅ Cliente autenticado com sucesso!');
