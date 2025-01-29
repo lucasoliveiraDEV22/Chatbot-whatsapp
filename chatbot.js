@@ -16,36 +16,31 @@ const PORT = process.env.PORT || 3004;
 // Faz o servidor escutar na porta especificada
 // Inicializando o servidor
 const server = app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`✅Servidor rodando na porta ${PORT}`);
   console.log(
-    `Acesse http://localhost:${PORT} para verificar o funcionamento.`
+    `🌐Acesse http://localhost:${PORT} para verificar o funcionamento.`
   );
-  console.log(`Servidor rodando na porta ${PORT}`);
+  // console.log(`Servidor rodando na porta ${PORT}`);
 });
 
 // Tratamento de erros relacionados à porta
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(
-      `A porta ${PORT} já está em uso. Por favor, tente uma porta diferente.`
+      `❌A porta ${PORT} já está em uso. Por favor, tente uma porta diferente.`
     );
     process.exit(1);
-    // const newPort = Number(PORT) + 1;
-    // app.listen(newPort, () => {
-    //   console.log(`Servidor rodando em http://localhost:${newPort}`);
-    // });
   } else {
     throw err;
   }
 });
 
-// leitor de qr code
-
-// const fs = require('fs');
+// ✅ Configuração do WhatsApp Web
 const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }),
   puppeteer: {
     headless: true,
+    executablePath: process.env.CHROME_BIN || null,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -53,7 +48,7 @@ const client = new Client({
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu',  
+      '--disable-gpu',
       '--disable-features=site-per-process',
       '--single-process'
     ]
@@ -71,8 +66,8 @@ client.on('qr', async (qr) => {
   qrCodeData = qr; // Atualiza para o novo QR Code válido
 
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
-    console.log('✅ QR Code atualizado!');
+    await qrcode.toDataURL(qrCodeData);
+    console.log('✅ QR Code atualizado e pronto!');
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
   }
@@ -83,36 +78,43 @@ client.on('ready', () => {
   qrCodeData = ''; // Limpa o QR Code quando conectado
 });
 
+client.on('authenticated', () => {
+  console.log('🔑 Cliente autenticado com sucesso!');
+});
+client.on('auth_failure', (msg) => {
+  console.error('❌ Falha na autenticação:', msg);
+  setTimeout(() => client.initialize(), 5000); // Tenta reconectar após 5s
+});
 // Evento disparado quando o cliente perde a conexão
-client.on('disconnected', async () => {
-  console.log('⚠️ Cliente desconectado! Tentando reconectar...');
+client.on('disconnected', (reason) => {
+  console.log('⚠️ Cliente desconectado! Tentando reconectar...', reason);
   qrCodeData = ''; // Limpa o QR Code antigo
   setTimeout(() => {
     client.initialize();
   }, 5000); // Aguarda 5 segundos antes de reiniciar
 });
-client.on('authenticated', () => {
-  console.log('✅ Cliente autenticado com sucesso!');
-});
-client.on('auth_failure', msg => {
-  console.error('❌ Falha na autenticação:', msg);
-});
+// ✅ Ping para evitar que Render mate o processo
+setInterval(() => {
+  console.log('🔄 Mantendo o bot ativo...');
+}, 60000); // A cada 60 segundos
+
+// ✅ Monitoramento de mensagens recebidas
 client.on('message', async (msg) => {
   console.log(
-    `[${new Date().toISOString()}] Mensagem recebida de ${msg.from}: ${
-      msg.body
-    }`
+    `📩 Mensagem recebida de ${msg.from}: ${msg.body}
+    `
   );
+  await msg.reply('✅ Recebi sua mensagem! O bot está funcionando.');
 });
 // E inicializa tudo
 try {
   client.initialize();
 } catch (error) {
-  console.error('Erro ao inicializar o cliente:', error.message);
+  console.error('❌ Erro ao inicializar o cliente:', error.message);
 }
 // Rota para exibir o link do QR Code
 app.get('/', (req, res) => {
-  console.log('Rota principal acessada');
+  console.log(' 🌐Rota principal acessada');
   console.log('Estado do QR Code:', qrCodeData); // Log do estado do QR Code
   if (!qrCodeData) {
     return res.status(200).send(
@@ -140,40 +142,31 @@ app.get('/', (req, res) => {
 
 app.get('/start', (req, res) => {
   client.initialize(); // Inicializa o cliente e gera o QR Code
-  client.on('qr', (qr) => {
-    qrCodeData = qr; // Gera o QR Code e armazena os dados
-    console.log('QR Code gerado imediatamente'); // Log para indicar que o QR Code foi gerado
-  });
+  // client.on('qr', (qr) => {
+  //   qrCodeData = qr; // Gera o QR Code e armazena os dados
+  //   console.log('QR Code gerado imediatamente'); // Log para indicar que o QR Code foi gerado
+  // });
   return res.redirect('/'); // Redireciona imediatamente
 });
 
 // Adicionando uma nova rota para inicializar o QR Code
 app.get('/qrcode', async (req, res) => {
-  console.log('Rota /qrcode acessada'); // Log de acesso à rota
-  if (!qrCodeData) {
-    console.log('QR Code não disponível, redirecionando para /'); // Log se QR Code não estiver disponível
-    return res.redirect('/');
-  }
-  // Gera o QR Code como imagem base64
+  console.log('🌐 Rota /qrcode acessada');
+  if (!qrCodeData) return res.redirect('/');
+  
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Gera o QR Code a partir do valor qr
-    console.log('QR Code gerado com sucesso'); // Log de sucesso na geração do QR Code
-    console.log('QR Code Image:', qrCodeImage); // Log do QR Code gerado
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
     res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
         <img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
         <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
-        <script>
-          setTimeout(() => { window.location.reload(); }, 30000);
-        </script>
+        <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
       </div>
     `);
   } catch (error) {
-    console.error('Erro ao gerar QR Code:', error);
-    res
-      .status(500)
-      .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
+    console.error('❌ Erro ao gerar QR Code:', error);
+    res.status(500).send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
   }
 });
 
