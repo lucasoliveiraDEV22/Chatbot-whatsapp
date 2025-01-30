@@ -68,8 +68,7 @@ let qrCodeData = '';
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
-  console.log('🔄 Novo QR Code gerado.  Aguardando 2 segundos antes de atualizar...');
-  await new Promise(res => setTimeout(res, 2000)); // Aguarda 2 segundos
+  console.log('🔄 Novo QR Code gerado. Atualizando imediatamente...');
   // qrCodeData = ''; // Limpa o QR Code antigo
   qrCodeData = qr; // Atualiza para o novo QR Code válido
 
