@@ -165,7 +165,7 @@ app.get('/qrcode', async (req, res) => {
     res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
         <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
-        <img src="${qrCodeImage}" alt="QR Code" style="width: 200px; height: 200px;" />
+        <img src="${qrCodeImage}" alt="QR Code" style="width: 300px; height: 300px;" />
         <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
         <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
       </div>
