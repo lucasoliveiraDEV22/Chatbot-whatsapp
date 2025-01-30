@@ -20,7 +20,6 @@ const server = app.listen(PORT, () => {
   console.log(
     `🌐Acesse http://localhost:${PORT} para verificar o funcionamento.`
   );
- 
 });
 // Impede que o Render mate a aplicação por inatividade
 server.keepAliveTimeout = 60 * 1000;
@@ -53,7 +52,8 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu',
       '--disable-features=site-per-process',
-      '--single-process', '--disable-extensions',
+      '--single-process',
+      '--disable-extensions',
       '--disable-background-timer-throttling',
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding'
@@ -110,7 +110,7 @@ client.on('message', async (msg) => {
     `📩 Mensagem recebida de ${msg.from}: ${msg.body}
     `
   );
-  await msg.reply('✅ Recebi sua mensagem! O bot está funcionando.');
+  // await msg.reply('✅ Recebi sua mensagem! O bot está funcionando.');
 });
 // E inicializa tudo
 try {
@@ -159,7 +159,7 @@ app.get('/start', (req, res) => {
 app.get('/qrcode', async (req, res) => {
   console.log('🌐 Rota /qrcode acessada');
   if (!qrCodeData) return res.redirect('/');
-  
+
   try {
     const qrCodeImage = await qrcode.toDataURL(qrCodeData);
     res.status(200).send(`
@@ -172,7 +172,9 @@ app.get('/qrcode', async (req, res) => {
     `);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
-    res.status(500).send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
+    res
+      .status(500)
+      .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
   }
 });
 
