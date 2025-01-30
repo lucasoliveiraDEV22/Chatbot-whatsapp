@@ -73,10 +73,23 @@ client.on('qr', async (qr) => {
   qrCodeData = qr; // Atualiza para o novo QR Code válido
 
   try {
-    await qrcode.toDataURL(qrCodeData);
-    console.log('✅ QR Code atualizado e pronto!');
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
+    res.status(200).send(`
+      <div style="text-align: center; margin-top: 50px;">
+        <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
+        <img src="${qrCodeImage}" alt="QR Code" style="width: 400px; height: 400px;" />
+        <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
+        <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
+      </div>
+    `);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
+    res.status(500).send(`
+      <div style="text-align: center; margin-top: 50px;">
+        <h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>
+        <p>Se o problema persistir, por favor, entre em contato com o suporte.</p>
+      </div>
+    `);
   }
 });
 // apos isso ele diz que foi tudo certo
