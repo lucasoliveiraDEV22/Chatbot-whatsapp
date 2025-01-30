@@ -56,7 +56,8 @@ const client = new Client({
       '--disable-extensions',
       '--disable-background-timer-throttling',
       '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding'
+      '--disable-renderer-backgrounding',
+      '--disable-blink-features=AutomationControlled' // Faz o Puppeteer parecer um navegador normal
     ]
   } // Sessão será salva automaticamente e identificador unico da sessão
 });
@@ -67,7 +68,8 @@ let qrCodeData = '';
 let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
-  console.log('🔄 Novo QR Code gerado.');
+  console.log('🔄 Novo QR Code gerado.  Aguardando 2 segundos antes de atualizar...');
+  await new Promise(res => setTimeout(res, 2000)); // Aguarda 2 segundos
   // qrCodeData = ''; // Limpa o QR Code antigo
   qrCodeData = qr; // Atualiza para o novo QR Code válido
 
@@ -93,8 +95,9 @@ client.on('auth_failure', (msg) => {
 });
 // Evento disparado quando o cliente perde a conexão
 client.on('disconnected', (reason) => {
-  console.log('⚠️ Cliente desconectado! Tentando reconectar...', reason);
+  console.log(`⚠️ WhatsApp desconectado: ${reason}`)
   qrCodeData = ''; // Limpa o QR Code antigo
+  console.log('🔄 Tentando reconectar em 5 segundos...');
   setTimeout(() => {
     client.initialize();
   }, 5000); // Aguarda 5 segundos antes de reiniciar
@@ -106,6 +109,10 @@ setInterval(() => {
 
 // ✅ Monitoramento de mensagens recebidas
 client.on('message', async (msg) => {
+  if (!client.info?.wid) {
+    console.log('❌ O bot ainda não está conectado ao WhatsApp.');
+    return;
+  }
   console.log(
     `📩 Mensagem recebida de ${msg.from}: ${msg.body}
     `
