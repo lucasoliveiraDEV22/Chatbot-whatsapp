@@ -20,8 +20,11 @@ const server = app.listen(PORT, () => {
   console.log(
     `🌐Acesse http://localhost:${PORT} para verificar o funcionamento.`
   );
-  // console.log(`Servidor rodando na porta ${PORT}`);
+ 
 });
+// Impede que o Render mate a aplicação por inatividade
+server.keepAliveTimeout = 60 * 1000;
+server.headersTimeout = 65 * 1000;
 
 // Tratamento de erros relacionados à porta
 server.on('error', (err) => {
@@ -50,7 +53,10 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu',
       '--disable-features=site-per-process',
-      '--single-process'
+      '--single-process', '--disable-extensions',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding'
     ]
   } // Sessão será salva automaticamente e identificador unico da sessão
 });
@@ -62,7 +68,7 @@ let attendantAvailable = false;
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
   console.log('🔄 Novo QR Code gerado.');
-  qrCodeData = ''; // Limpa o QR Code antigo
+  // qrCodeData = ''; // Limpa o QR Code antigo
   qrCodeData = qr; // Atualiza para o novo QR Code válido
 
   try {
