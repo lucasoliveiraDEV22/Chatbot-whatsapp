@@ -224,9 +224,9 @@ client.on('message', async (msg) => {
   if (!interactions.has(userId)) {
     if (msg.body.match(/(menu|Menu|dia|tarde|noite|oi|Oi|Olá|olá|ola|Ola)/i)) {
       const chat = await msg.getChat();
-      await delay(3000);
+      await delay(2000);
       await chat.sendStateTyping();
-      await delay(3000);
+      await delay(2000);
       const contact = await msg.getContact();
       const name = contact.pushname;
       await client.sendMessage(
