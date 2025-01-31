@@ -1,4 +1,4 @@
-// const http = require('http');
+const http = require('http');
 // Define a porta a partir da variável de ambiente ou usa a porta 3000 como padrão
 const express = require('express');
 const qrcode = require('qrcode');
@@ -7,14 +7,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js'); // Mudança Buttons
 const app = express();
 const PORT = process.env.PORT || 3004;
 
-// Cria um servidor básico
-// const server = http.createServer((req, res) => {
-//   res.writeHead(200, { 'Content-Type': 'text/plain' });
-//   res.end('Chatbot para WhatsApp esta rodando!');
-// });
-
 // Faz o servidor escutar na porta especificada
-// Inicializando o servidor
 const server = app.listen(PORT, () => {
   console.log(`✅Servidor rodando na porta ${PORT}`);
   console.log(
@@ -49,49 +42,39 @@ const client = new Client({
       '--disable-dev-shm-usage',
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
-      '--no-zygote',
       '--disable-gpu',
       '--disable-features=site-per-process',
-      '--single-process',
       '--disable-extensions',
       '--disable-background-timer-throttling',
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding',
       '--disable-blink-features=AutomationControlled' // Faz o Puppeteer parecer um navegador normal
     ]
-  } // Sessão será salva automaticamente e identificador unico da sessão
+  }
 });
+
 // Variável para armazenar o QR Code
 let qrCodeData = '';
 
 // Variável para rastrear a disponibilidade de um atendente
 let attendantAvailable = false;
+
 // serviço de leitura do qr code
 client.on('qr', async (qr) => {
   console.log('🔄 Novo QR Code gerado. Atualizando imediatamente...');
-  // qrCodeData = ''; // Limpa o QR Code antigo
   qrCodeData = qr; // Atualiza para o novo QR Code válido
+
+  const startTime = Date.now(); // Início do monitoramento de tempo
 
   try {
     const qrCodeImage = await qrcode.toDataURL(qrCodeData);
-    res.status(200).send(`
-      <div style="text-align: center; margin-top: 50px;">
-        <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
-        <img src="${qrCodeImage}" alt="QR Code" style="width: 400px; height: 400px;" />
-        <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
-        <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
-      </div>
-    `);
+    const endTime = Date.now(); // Fim do monitoramento de tempo
+    console.log(`✅ QR Code atualizado e pronto! Tempo de geração: ${endTime - startTime} ms`);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
-    res.status(500).send(`
-      <div style="text-align: center; margin-top: 50px;">
-        <h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>
-        <p>Se o problema persistir, por favor, entre em contato com o suporte.</p>
-      </div>
-    `);
   }
 });
+
 // apos isso ele diz que foi tudo certo
 client.on('ready', () => {
   console.log('WhatsApp conectado com sucesso!');
@@ -105,6 +88,7 @@ client.on('auth_failure', (msg) => {
   console.error('❌ Falha na autenticação:', msg);
   setTimeout(() => client.initialize(), 5000); // Tenta reconectar após 5s
 });
+
 // Evento disparado quando o cliente perde a conexão
 client.on('disconnected', (reason) => {
   console.log(`⚠️ WhatsApp desconectado: ${reason}`)
@@ -114,10 +98,11 @@ client.on('disconnected', (reason) => {
     client.initialize();
   }, 5000); // Aguarda 5 segundos antes de reiniciar
 });
+
 // ✅ Ping para evitar que Render mate o processo
 setInterval(() => {
   console.log('🔄 Mantendo o bot ativo...');
-}, 60000); // A cada 60 segundos
+}, 50000); // A cada 50 segundos
 
 // ✅ Monitoramento de mensagens recebidas
 client.on('message', async (msg) => {
@@ -126,17 +111,10 @@ client.on('message', async (msg) => {
     return;
   }
   console.log(
-    `📩 Mensagem recebida de ${msg.from}: ${msg.body}
-    `
+    `📩 Mensagem recebida de ${msg.from}: ${msg.body}`
   );
-  // await msg.reply('✅ Recebi sua mensagem! O bot está funcionando.');
 });
-// E inicializa tudo
-try {
-  client.initialize();
-} catch (error) {
-  console.error('❌ Erro ao inicializar o cliente:', error.message);
-}
+
 // Rota para exibir o link do QR Code
 app.get('/', (req, res) => {
   console.log(' 🌐Rota principal acessada');
@@ -145,7 +123,7 @@ app.get('/', (req, res) => {
     return res.status(200).send(
       `
          <div style="text-align: center; margin-top: 50px;">
-        <h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>'
+        <h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>
         <p>Se o QR Code não aparecer em alguns segundos, <a href="/start">clique aqui</a> para reiniciar.</p>
         <script>
         setTimeout(() => { window.location.reload(); }, 5000);
@@ -154,23 +132,12 @@ app.get('/', (req, res) => {
       `
     );
   }
-  // const qrLink = `http://localhost:${PORT}/qrcode`; // Link para leitura do QR Code
-  // return res.status(200).send(`
-  //   <div style="text-align: center; margin-top: 50px;">
-  //     <h1>Clique no link abaixo para acessar o QR Code:</h1>
-  //     <a href="${qrLink}" target="_blank">${qrLink}</a>
-  //   </div>
-  // `);
   console.log('Redirecionando para /qrcode'); // Log de redirecionamento
   return res.redirect('/qrcode');
 });
 
 app.get('/start', (req, res) => {
   client.initialize(); // Inicializa o cliente e gera o QR Code
-  // client.on('qr', (qr) => {
-  //   qrCodeData = qr; // Gera o QR Code e armazena os dados
-  //   console.log('QR Code gerado imediatamente'); // Log para indicar que o QR Code foi gerado
-  // });
   return res.redirect('/'); // Redireciona imediatamente
 });
 
@@ -191,16 +158,13 @@ app.get('/qrcode', async (req, res) => {
     `);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
-    res
-      .status(500)
-      .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
+    res.status(500).send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
   }
 });
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
 
 // Variável para rastrear interações do paciente
-
 const interactions = new Map(); //Armazena o estado de cada usuário
 
 async function handleOptions1(from) {
