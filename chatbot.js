@@ -126,7 +126,7 @@ app.get('/', (req, res) => {
         <h1>O QR Code ainda não está disponível. Tente novamente em alguns segundos.</h1>
         <p>Se o QR Code não aparecer em alguns segundos, <a href="/start">clique aqui</a> para reiniciar.</p>
         <script>
-        setTimeout(() => { window.location.reload(); }, 5000);
+        setTimeout(() => { window.location.reload(); }, 10000); // Aumentando o tempo de atualização para 10 segundos
       </script>
       </div>
       `
