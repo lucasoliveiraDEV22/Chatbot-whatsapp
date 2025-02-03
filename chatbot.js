@@ -69,7 +69,11 @@ client.on('qr', async (qr) => {
   try {
     const qrCodeImage = await qrcode.toDataURL(qrCodeData);
     const endTime = Date.now(); // Fim do monitoramento de tempo
-    console.log(`✅ QR Code atualizado e pronto! Tempo de geração: ${endTime - startTime} ms`);
+    console.log(
+      `✅ QR Code atualizado e pronto! Tempo de geração: ${
+        endTime - startTime
+      } ms`
+    );
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
   }
@@ -91,7 +95,7 @@ client.on('auth_failure', (msg) => {
 
 // Evento disparado quando o cliente perde a conexão
 client.on('disconnected', (reason) => {
-  console.log(`⚠️ WhatsApp desconectado: ${reason}`)
+  console.log(`⚠️ WhatsApp desconectado: ${reason}`);
   qrCodeData = ''; // Limpa o QR Code antigo
   console.log('🔄 Tentando reconectar em 5 segundos...');
   setTimeout(() => {
@@ -110,9 +114,7 @@ client.on('message', async (msg) => {
     console.log('❌ O bot ainda não está conectado ao WhatsApp.');
     return;
   }
-  console.log(
-    `📩 Mensagem recebida de ${msg.from}: ${msg.body}`
-  );
+  console.log(`📩 Mensagem recebida de ${msg.from}: ${msg.body}`);
 });
 
 // Rota para exibir o link do QR Code
@@ -135,7 +137,6 @@ app.get('/', (req, res) => {
   console.log('Redirecionando para /qrcode'); // Log de redirecionamento
   return res.redirect('/qrcode');
 });
-
 app.get('/start', (req, res) => {
   client.initialize(); // Inicializa o cliente e gera o QR Code
   return res.redirect('/'); // Redireciona imediatamente
@@ -147,18 +148,20 @@ app.get('/qrcode', async (req, res) => {
   if (!qrCodeData) return res.redirect('/');
 
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
+    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Generate QR code image
     res.status(200).send(`
       <div style="text-align: center; margin-top: 50px;">
-        <h1>Escaneie o QR Code abaixo para conectar o WhatsApp</h1>
-        <img src="${qrCodeImage}" alt="QR Code" style="width: 300px; height: 300px;" />
+        <h1>QR Code:</h1>
+        <img src="${qrCodeImage}" alt="QR Code" />
         <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
         <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
       </div>
     `);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
-    res.status(500).send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
+    res
+      .status(500)
+      .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
   }
 });
 
