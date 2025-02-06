@@ -1,5 +1,5 @@
 const http = require('http');
-// Define a porta a partir da variável de ambiente ou usa a porta 3000 como padrão
+// Define a porta a partir da variável de ambiente ou usa a porta 3004 como padrão
 const express = require('express');
 const qrcode = require('qrcode');
 const { Client, LocalAuth } = require('whatsapp-web.js'); // Mudança Buttons
@@ -35,23 +35,18 @@ const client = new Client({
   authStrategy: new LocalAuth({ clientId: 'chatbot-deploy' }),
   puppeteer: {
     headless: true,
-    executablePath: process.env.CHROME_BIN || null,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--disable-gpu',
-      '--disable-features=site-per-process',
-      '--disable-extensions',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding',
-      '--disable-blink-features=AutomationControlled' // Faz o Puppeteer parecer um navegador normal
-    ]
+      '--single-process', // Reduz uso de memória
+      '--no-zygote'
+    ],
+    defaultViewport: { width: 800, height: 600 }, // Viewport menor
+    timeout: 60000 // Aumenta timeout
   }
 });
+client.initialize();
 
 // Variável para armazenar o QR Code
 let qrCodeData = '';
@@ -67,13 +62,12 @@ client.on('qr', async (qr) => {
   const startTime = Date.now(); // Início do monitoramento de tempo
 
   try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData);
-    const endTime = Date.now(); // Fim do monitoramento de tempo
-    console.log(
-      `✅ QR Code atualizado e pronto! Tempo de geração: ${
-        endTime - startTime
-      } ms`
-    );
+    qrCodeData = await qrcode.toDataURL(qr, {
+      errorCorrectionLevel: 'L', // Menor nível de correção de erro para processamento mais rápido
+      margin: 1 // Reduz margem para processamento mais rápido
+    });
+
+    console.log(`✅ QR Code atualizado e pronto!`);
   } catch (error) {
     console.error('❌ Erro ao gerar QR Code:', error);
   }
@@ -147,22 +141,21 @@ app.get('/qrcode', async (req, res) => {
   console.log('🌐 Rota /qrcode acessada');
   if (!qrCodeData) return res.redirect('/');
 
-  try {
-    const qrCodeImage = await qrcode.toDataURL(qrCodeData); // Generate QR code image
-    res.status(200).send(`
-      <div style="text-align: center; margin-top: 50px;">
-        <h1>QR Code:</h1>
-        <img src="${qrCodeImage}" alt="QR Code" />
-        <p>Se o QR Code expirar, a página será atualizada automaticamente.</p>
-        <script>setTimeout(() => { window.location.reload(); }, 30000);</script>
-      </div>
-    `);
-  } catch (error) {
-    console.error('❌ Erro ao gerar QR Code:', error);
-    res
-      .status(500)
-      .send('<h1>Erro ao gerar QR Code. Tente novamente mais tarde.</h1>');
-  }
+  res.status(200).send(`
+    <div style="text-align: center;">
+      <img src="${qrCodeData}" alt="QR Code" />
+      <script>
+        const checkQR = () => fetch('/check-qr').then(r => r.json()).then(data => {
+          if (data.needsRefresh) location.reload();
+        });
+        setInterval(checkQR, 5000);
+      </script>
+    </div>
+  `);
+
+  app.get('/check-qr', (_, res) => {
+    res.json({ needsRefresh: !qrCodeData });
+  });
 });
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
