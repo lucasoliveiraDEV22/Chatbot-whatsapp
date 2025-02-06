@@ -65,7 +65,11 @@ client.on('qr', async (qr) => {
     qrCodeData = await qrcode.toDataURL(qr, {
       errorCorrectionLevel: 'L', // Menor nível de correção de erro para processamento mais rápido
       margin: 1, // Reduz margem para processamento mais rápido
-      scale: 8 // Aumenta tamanho
+      scale: 8, // Aumenta tamanho
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
     });
 
     console.log(`✅ QR Code atualizado e pronto!`);
@@ -143,10 +147,17 @@ app.get('/qrcode', async (req, res) => {
   if (!qrCodeData) return res.redirect('/');
 
   res.status(200).send(`
-    <div style="text-align: center;">
-      <img src="${qrCodeData}" alt="QR Code" />
+    <div style="text-align: center; background: white; padding: 20px;">
+      <img src="${qrCodeData}" alt="QR Code"  style="
+          width: 300px; 
+          height: 300px;
+          image-rendering: -webkit-optimize-contrast;
+          image-rendering: crisp-edges;
+        " />
       <script>
-       setTimeout(() => location.reload(), 30000);;
+        if (!document.hidden) {
+          setTimeout(() => location.reload(), 25000);
+        }
       </script>
     </div>
   `);
