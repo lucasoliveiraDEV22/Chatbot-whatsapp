@@ -64,7 +64,8 @@ client.on('qr', async (qr) => {
   try {
     qrCodeData = await qrcode.toDataURL(qr, {
       errorCorrectionLevel: 'L', // Menor nível de correção de erro para processamento mais rápido
-      margin: 1 // Reduz margem para processamento mais rápido
+      margin: 1, // Reduz margem para processamento mais rápido
+      scale: 8 // Aumenta tamanho
     });
 
     console.log(`✅ QR Code atualizado e pronto!`);
@@ -145,17 +146,14 @@ app.get('/qrcode', async (req, res) => {
     <div style="text-align: center;">
       <img src="${qrCodeData}" alt="QR Code" />
       <script>
-        const checkQR = () => fetch('/check-qr').then(r => r.json()).then(data => {
-          if (data.needsRefresh) location.reload();
-        });
-        setInterval(checkQR, 5000);
+       setTimeout(() => location.reload(), 30000);;
       </script>
     </div>
   `);
 
-  app.get('/check-qr', (_, res) => {
-    res.json({ needsRefresh: !qrCodeData });
-  });
+  // app.get('/check-qr', (_, res) => {
+  //   res.json({ needsRefresh: !qrCodeData });
+  // });
 });
 
 const delay = (ms) => new Promise((res) => setTimeout(res, ms)); // Função que usamos para criar o delay entre uma ação e outra
